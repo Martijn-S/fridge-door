@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Boodschappenlijst</title>
   <style>
-    [hidden] { display: none; }
+    [hidden] { display: none !important; }
     body {
       font-family: sans-serif;
       margin: 0;
@@ -14,6 +14,40 @@
       margin-inline: auto;
     }
     h1 { font-size: 1.5rem; }
+
+    /* Top bar (shown when signed in) */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      color: #666;
+    }
+    .topbar .account {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .topbar button {
+      font-size: 0.9rem;
+      padding: 0.4rem 0.8rem;
+    }
+
+    /* Login screen */
+    .login-button {
+      display: block;
+      width: 100%;
+      margin-top: 2rem;
+      padding: 1.2rem 1rem;
+      font-size: 1.2rem;
+      color: #fff;
+      background: #2e7d32;
+      border: none;
+      border-radius: 0.75rem;
+    }
+    .error { color: #b00; }
 
     /* Home screen */
     .menu {
@@ -75,38 +109,60 @@
 </head>
 <body>
 
-  <!-- View: home screen -->
-  <section id="view-home">
-    <h1>Welkom</h1>
-    <nav class="menu">
-      <a class="menu-button" href="#/groceries">Boodschappen</a>
-      <a class="menu-button" href="#/option-2">Optie 2</a>
-    </nav>
+  <!-- Shown while we find out whether someone is signed in -->
+  <p id="auth-loading" class="status">Laden…</p>
+
+  <!-- Login screen (shown when signed out) -->
+  <section id="login-screen" hidden>
+    <h1>Boodschappenlijst</h1>
+    <p>Log in met het gedeelde Google-account om de lijst te zien.</p>
+    <button type="button" id="login-button" class="login-button">Inloggen met Google</button>
+    <p id="login-error" class="error" role="alert"></p>
   </section>
 
-  <!-- View: groceries -->
-  <section id="view-groceries" hidden>
-    <a class="back-link" href="#/">← Terug</a>
-    <h1>Boodschappen</h1>
+  <!-- The app (shown when signed in) -->
+  <div id="app" hidden>
+    <div class="topbar">
+      <span id="account" class="account"></span>
+      <button type="button" id="logout-button">Uitloggen</button>
+    </div>
 
-    <form id="add-form">
-      <input type="text" id="new-item" placeholder="Voeg een item toe" autocomplete="off">
-      <button type="submit">Toevoegen</button>
-    </form>
+    <!-- View: home screen -->
+    <section id="view-home">
+      <h1>Welkom</h1>
+      <nav class="menu">
+        <a class="menu-button" href="#/groceries">Boodschappen</a>
+        <a class="menu-button" href="#/option-2">Optie 2</a>
+      </nav>
+    </section>
 
-    <p id="status" class="status">Laden…</p>
-    <ul id="list"></ul>
-  </section>
+    <!-- View: groceries -->
+    <section id="view-groceries" hidden>
+      <a class="back-link" href="#/">← Terug</a>
+      <h1>Boodschappen</h1>
 
-  <!-- View: option 2 (placeholder) -->
-  <section id="view-option-2" hidden>
-    <a class="back-link" href="#/">← Terug</a>
-    <h1>Optie 2</h1>
-    <p>Deze pagina is nog leeg.</p>
-  </section>
+      <form id="add-form">
+        <input type="text" id="new-item" placeholder="Voeg een item toe" autocomplete="off">
+        <button type="submit">Toevoegen</button>
+      </form>
+
+      <p id="status" class="status">Laden…</p>
+      <ul id="list"></ul>
+    </section>
+
+    <!-- View: option 2 (placeholder) -->
+    <section id="view-option-2" hidden>
+      <a class="back-link" href="#/">← Terug</a>
+      <h1>Optie 2</h1>
+      <p>Deze pagina is nog leeg.</p>
+    </section>
+  </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+    import {
+      getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
     import {
       getFirestore, collection, addDoc, updateDoc, deleteDoc,
       doc, onSnapshot, query, orderBy, serverTimestamp
@@ -114,7 +170,7 @@
 
     // ---------- Firebase ----------
     // This config is an identifier, not a password. The list is protected
-    // by the security rules and sign-in we add in step 7.
+    // by sign-in plus the Firestore security rules.
     const firebaseConfig = {
       apiKey: "AIzaSyA1JnfXqFbTLJZHy6ezOnxAf9HgKsyGIZM",
       authDomain: "grocery-list-a6627.firebaseapp.com",
@@ -125,6 +181,7 @@
     };
 
     const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
     const db = getFirestore(app);
     const itemsCollection = collection(db, "groceryItems");
 
@@ -143,8 +200,57 @@
     window.addEventListener("hashchange", showView);
     showView();
 
+    // ---------- Sign-in ----------
+    const authLoading = document.getElementById("auth-loading");
+    const loginScreen = document.getElementById("login-screen");
+    const appContainer = document.getElementById("app");
+    const loginButton = document.getElementById("login-button");
+    const loginError = document.getElementById("login-error");
+    const logoutButton = document.getElementById("logout-button");
+    const account = document.getElementById("account");
+
+    loginButton.addEventListener("click", () => {
+      loginError.textContent = "";
+      const provider = new GoogleAuthProvider();
+      // Always let the user pick an account (the browser may know several).
+      provider.setCustomParameters({ prompt: "select_account" });
+      // Must be called directly from the click, or phones may block the popup.
+      signInWithPopup(auth, provider).catch((error) => {
+        console.error(error);
+        if (error.code === "auth/popup-closed-by-user" ||
+            error.code === "auth/cancelled-popup-request") {
+          return; // The user closed the window: not an error.
+        }
+        if (error.code === "auth/popup-blocked") {
+          loginError.textContent = "Het inlogvenster is geblokkeerd. Sta pop-ups toe voor deze site en probeer het opnieuw.";
+        } else {
+          loginError.textContent = "Inloggen is mislukt. Probeer het opnieuw.";
+        }
+      });
+    });
+
+    logoutButton.addEventListener("click", () => {
+      signOut(auth).catch(console.error);
+    });
+
+    // Runs at start-up and every time someone signs in or out.
+    onAuthStateChanged(auth, (user) => {
+      authLoading.hidden = true;
+      if (user) {
+        account.textContent = user.email;
+        loginScreen.hidden = true;
+        appContainer.hidden = false;
+        startListening();
+      } else {
+        stopListening();
+        appContainer.hidden = true;
+        loginScreen.hidden = false;
+      }
+    });
+
     // ---------- Groceries ----------
     let items = [];
+    let unsubscribeItems = null;
 
     const list = document.getElementById("list");
     const form = document.getElementById("add-form");
@@ -186,18 +292,32 @@
 
     // Live updates: runs now and again whenever the list changes
     // (also when the other phone changes something).
-    onSnapshot(
-      query(itemsCollection, orderBy("createdAt")),
-      (snapshot) => {
-        items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-        status.textContent = items.length === 0 ? "De lijst is leeg." : "";
-        render();
-      },
-      (error) => {
-        console.error(error);
-        status.textContent = "De lijst kan niet worden geladen.";
-      }
-    );
+    // Only started after sign-in, and stopped again on sign-out.
+    function startListening() {
+      if (unsubscribeItems) return;
+      status.textContent = "Laden…";
+      unsubscribeItems = onSnapshot(
+        query(itemsCollection, orderBy("createdAt")),
+        (snapshot) => {
+          items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+          status.textContent = items.length === 0 ? "De lijst is leeg." : "";
+          render();
+        },
+        (error) => {
+          console.error(error);
+          status.textContent = error.code === "permission-denied"
+            ? "Dit account heeft geen toegang tot de lijst. Log uit en log in met het gedeelde account."
+            : "De lijst kan niet worden geladen.";
+        }
+      );
+    }
+
+    function stopListening() {
+      if (unsubscribeItems) unsubscribeItems();
+      unsubscribeItems = null;
+      items = [];
+      render();
+    }
 
     form.addEventListener("submit", (event) => {
       event.preventDefault();

@@ -127,6 +127,13 @@
       <button type="button" id="logout-button">Uitloggen</button>
     </div>
 
+    <!-- Shown instead of the app when the signed-in account is refused -->
+    <section id="no-access" hidden>
+      <h1>Geen toegang</h1>
+      <p>Dit account heeft geen toegang tot de lijst. Log uit en log in met het gedeelde account.</p>
+    </section>
+
+    <div id="views">
     <!-- View: home screen -->
     <section id="view-home">
       <h1>Welkom</h1>
@@ -156,6 +163,7 @@
       <h1>Optie 2</h1>
       <p>Deze pagina is nog leeg.</p>
     </section>
+    </div>
   </div>
 
   <script type="module">
@@ -240,6 +248,9 @@
         account.textContent = user.email;
         loginScreen.hidden = true;
         appContainer.hidden = false;
+        // Always restart, so a switch directly from one account to another
+        // (for example in another tab) never keeps the old list or listener.
+        stopListening();
         startListening();
       } else {
         stopListening();
@@ -256,6 +267,8 @@
     const form = document.getElementById("add-form");
     const input = document.getElementById("new-item");
     const status = document.getElementById("status");
+    const noAccess = document.getElementById("no-access");
+    const views = document.getElementById("views");
 
     function showError(error) {
       console.error(error);
@@ -296,18 +309,29 @@
     function startListening() {
       if (unsubscribeItems) return;
       status.textContent = "Laden…";
+      noAccess.hidden = true;
+      views.hidden = false;
       unsubscribeItems = onSnapshot(
         query(itemsCollection, orderBy("createdAt")),
         (snapshot) => {
           items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
           status.textContent = items.length === 0 ? "De lijst is leeg." : "";
+          noAccess.hidden = true;
+          views.hidden = false;
           render();
         },
         (error) => {
           console.error(error);
-          status.textContent = error.code === "permission-denied"
-            ? "Dit account heeft geen toegang tot de lijst. Log uit en log in met het gedeelde account."
-            : "De lijst kan niet worden geladen.";
+          // Never keep showing old items after an error.
+          items = [];
+          render();
+          if (error.code === "permission-denied") {
+            // The security rules refused this account: show only the message.
+            views.hidden = true;
+            noAccess.hidden = false;
+          } else {
+            status.textContent = "De lijst kan niet worden geladen.";
+          }
         }
       );
     }

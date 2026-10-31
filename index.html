@@ -50,6 +50,7 @@
       padding: 0.7rem;
     }
     button { font-size: 1.1rem; padding: 0.7rem 1rem; }
+    .status { color: #666; }
     ul { list-style: none; padding: 0; }
     li {
       display: flex;
@@ -93,6 +94,7 @@
       <button type="submit">Toevoegen</button>
     </form>
 
+    <p id="status" class="status">Laden…</p>
     <ul id="list"></ul>
   </section>
 
@@ -103,7 +105,29 @@
     <p>Deze pagina is nog leeg.</p>
   </section>
 
-  <script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+    import {
+      getFirestore, collection, addDoc, updateDoc, deleteDoc,
+      doc, onSnapshot, query, orderBy, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+    // ---------- Firebase ----------
+    // This config is an identifier, not a password. The list is protected
+    // by the security rules and sign-in we add in step 7.
+    const firebaseConfig = {
+      apiKey: "AIzaSyA1JnfXqFbTLJZHy6ezOnxAf9HgKsyGIZM",
+      authDomain: "grocery-list-a6627.firebaseapp.com",
+      projectId: "grocery-list-a6627",
+      storageBucket: "grocery-list-a6627.firebasestorage.app",
+      messagingSenderId: "956088734560",
+      appId: "1:956088734560:web:2c9f12b2ca46b5006bc405"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const itemsCollection = collection(db, "groceryItems");
+
     // ---------- Navigation ----------
     // The part of the address after "#/" decides which view is shown.
     const viewNames = ["home", "groceries", "option-2"];
@@ -120,20 +144,21 @@
     showView();
 
     // ---------- Groceries ----------
-    // Still local only. Firebase replaces this in step 4.
-    let items = [
-      { text: "Melk", done: false },
-      { text: "Brood", done: false },
-      { text: "Appels", done: false }
-    ];
+    let items = [];
 
     const list = document.getElementById("list");
     const form = document.getElementById("add-form");
     const input = document.getElementById("new-item");
+    const status = document.getElementById("status");
+
+    function showError(error) {
+      console.error(error);
+      status.textContent = "Er ging iets mis. Probeer het opnieuw.";
+    }
 
     function render() {
       list.innerHTML = "";
-      items.forEach((item, index) => {
+      for (const item of items) {
         const li = document.createElement("li");
         if (item.done) li.classList.add("done");
 
@@ -141,8 +166,8 @@
         text.className = "text";
         text.textContent = item.text;
         text.addEventListener("click", () => {
-          items[index].done = !items[index].done;
-          render();
+          updateDoc(doc(db, "groceryItems", item.id), { done: !item.done })
+            .catch(showError);
         });
 
         const remove = document.createElement("button");
@@ -150,26 +175,41 @@
         remove.textContent = "×";
         remove.setAttribute("aria-label", "Verwijder " + item.text);
         remove.addEventListener("click", () => {
-          items.splice(index, 1);
-          render();
+          deleteDoc(doc(db, "groceryItems", item.id)).catch(showError);
         });
 
         li.appendChild(text);
         li.appendChild(remove);
         list.appendChild(li);
-      });
+      }
     }
+
+    // Live updates: runs now and again whenever the list changes
+    // (also when the other phone changes something).
+    onSnapshot(
+      query(itemsCollection, orderBy("createdAt")),
+      (snapshot) => {
+        items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+        status.textContent = items.length === 0 ? "De lijst is leeg." : "";
+        render();
+      },
+      (error) => {
+        console.error(error);
+        status.textContent = "De lijst kan niet worden geladen.";
+      }
+    );
 
     form.addEventListener("submit", (event) => {
       event.preventDefault();
       const value = input.value.trim();
       if (value === "") return;
-      items.push({ text: value, done: false });
       input.value = "";
-      render();
+      addDoc(itemsCollection, {
+        text: value,
+        done: false,
+        createdAt: serverTimestamp()
+      }).catch(showError);
     });
-
-    render();
   </script>
 </body>
 </html>

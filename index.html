@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="nl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Grocery list</title>
+  <title>Boodschappenlijst</title>
   <style>
+    [hidden] { display: none; }
     body {
       font-family: sans-serif;
       margin: 0;
@@ -13,28 +14,162 @@
       margin-inline: auto;
     }
     h1 { font-size: 1.5rem; }
+
+    /* Home screen */
+    .menu {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    .menu-button {
+      display: block;
+      padding: 1.5rem 1rem;
+      font-size: 1.3rem;
+      text-align: center;
+      text-decoration: none;
+      color: #fff;
+      background: #2e7d32;
+      border-radius: 0.75rem;
+    }
+
+    /* Back link on subpages */
+    .back-link {
+      display: inline-block;
+      padding: 0.5rem 0;
+      font-size: 1.1rem;
+      color: #2e7d32;
+      text-decoration: none;
+    }
+
+    /* Groceries page */
+    form { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    input[type="text"] {
+      flex: 1;
+      font-size: 1.1rem;
+      padding: 0.7rem;
+    }
+    button { font-size: 1.1rem; padding: 0.7rem 1rem; }
     ul { list-style: none; padding: 0; }
     li {
-      padding: 0.9rem 0.75rem;
+      display: flex;
+      align-items: center;
       border-bottom: 1px solid #ddd;
+    }
+    .text {
+      flex: 1;
+      padding: 0.9rem 0.75rem;
       font-size: 1.1rem;
+      cursor: pointer;
+    }
+    li.done .text { text-decoration: line-through; color: #888; }
+    .remove {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: #b00;
+      padding: 0.5rem 0.9rem;
     }
   </style>
 </head>
 <body>
-  <h1>Grocery list</h1>
-  <ul id="list"></ul>
+
+  <!-- View: home screen -->
+  <section id="view-home">
+    <h1>Welkom</h1>
+    <nav class="menu">
+      <a class="menu-button" href="#/groceries">Boodschappen</a>
+      <a class="menu-button" href="#/option-2">Optie 2</a>
+    </nav>
+  </section>
+
+  <!-- View: groceries -->
+  <section id="view-groceries" hidden>
+    <a class="back-link" href="#/">← Terug</a>
+    <h1>Boodschappen</h1>
+
+    <form id="add-form">
+      <input type="text" id="new-item" placeholder="Voeg een item toe" autocomplete="off">
+      <button type="submit">Toevoegen</button>
+    </form>
+
+    <ul id="list"></ul>
+  </section>
+
+  <!-- View: option 2 (placeholder) -->
+  <section id="view-option-2" hidden>
+    <a class="back-link" href="#/">← Terug</a>
+    <h1>Optie 2</h1>
+    <p>Deze pagina is nog leeg.</p>
+  </section>
 
   <script>
-    // Hardcoded sample items for now. Firebase replaces this in step 4.
-    const items = ["Milk", "Bread", "Apples", "Coffee", "Toilet paper"];
+    // ---------- Navigation ----------
+    // The part of the address after "#/" decides which view is shown.
+    const viewNames = ["home", "groceries", "option-2"];
+
+    function showView() {
+      let name = location.hash.replace("#/", "");
+      if (!viewNames.includes(name)) name = "home";
+      for (const viewName of viewNames) {
+        document.getElementById("view-" + viewName).hidden = (viewName !== name);
+      }
+    }
+
+    window.addEventListener("hashchange", showView);
+    showView();
+
+    // ---------- Groceries ----------
+    // Still local only. Firebase replaces this in step 4.
+    let items = [
+      { text: "Melk", done: false },
+      { text: "Brood", done: false },
+      { text: "Appels", done: false }
+    ];
 
     const list = document.getElementById("list");
-    for (const item of items) {
-      const li = document.createElement("li");
-      li.textContent = item;
-      list.appendChild(li);
+    const form = document.getElementById("add-form");
+    const input = document.getElementById("new-item");
+
+    function render() {
+      list.innerHTML = "";
+      items.forEach((item, index) => {
+        const li = document.createElement("li");
+        if (item.done) li.classList.add("done");
+
+        const text = document.createElement("span");
+        text.className = "text";
+        text.textContent = item.text;
+        text.addEventListener("click", () => {
+          items[index].done = !items[index].done;
+          render();
+        });
+
+        const remove = document.createElement("button");
+        remove.className = "remove";
+        remove.textContent = "×";
+        remove.setAttribute("aria-label", "Verwijder " + item.text);
+        remove.addEventListener("click", () => {
+          items.splice(index, 1);
+          render();
+        });
+
+        li.appendChild(text);
+        li.appendChild(remove);
+        list.appendChild(li);
+      });
     }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const value = input.value.trim();
+      if (value === "") return;
+      items.push({ text: value, done: false });
+      input.value = "";
+      render();
+    });
+
+    render();
   </script>
 </body>
 </html>

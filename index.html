@@ -5,11 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Grocery list</title>
   <style>
-    body { font-family: sans-serif; margin: 2rem; text-align: center; }
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 1rem;
+      max-width: 30rem;
+      margin-inline: auto;
+    }
+    h1 { font-size: 1.5rem; }
+    ul { list-style: none; padding: 0; }
+    li {
+      padding: 0.9rem 0.75rem;
+      border-bottom: 1px solid #ddd;
+      font-size: 1.1rem;
+    }
   </style>
 </head>
 <body>
-  <h1>Hello, grocery list!</h1>
-  <p>If you can read this on your phone, step 1 works.</p>
+  <h1>Grocery list</h1>
+  <ul id="list"></ul>
+
+  <script>
+    // Hardcoded sample items for now. Firebase replaces this in step 4.
+    const items = ["Milk", "Bread", "Apples", "Coffee", "Toilet paper"];
+
+    const list = document.getElementById("list");
+    for (const item of items) {
+      const li = document.createElement("li");
+      li.textContent = item;
+      list.appendChild(li);
+    }
+  </script>
 </body>
 </html>

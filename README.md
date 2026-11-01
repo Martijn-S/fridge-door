@@ -77,3 +77,6 @@ Two Firestore collections:
 - The module files do not load when `index.html` is opened by double-clicking it; use a small local server or test on the hosted site.
 - A local server address is refused by Firebase unless it is added to the API key's allowed referrers.
 - GitHub Pages can take a minute to update after a change, and phones may briefly show a cached older version.
+
+
+Testing git

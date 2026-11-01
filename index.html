@@ -8,6 +8,10 @@
   <link rel="icon" type="image/png" href="icon-192.png">
   <meta name="theme-color" content="#f6efdf">
   <meta name="color-scheme" content="light">
+  <!-- Title font (Fraunces, free from Google Fonts). If it fails to load, a plain serif is used instead. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&display=swap">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -44,14 +48,21 @@
     <div id="views">
       <!-- View: home screen -->
       <section id="view-home">
-        <h1>Fridge Door</h1>
-        <nav class="menu">
-          <a class="tile tile-groceries" href="#/groceries" aria-label="Boodschappen" title="Boodschappen">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-          </a>
-          <a class="tile tile-freezer" href="#/freezer" aria-label="Vriezer" title="Vriezer">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12h20"/><path d="M12 2v20"/><path d="m20 16-4-4 4-4"/><path d="m4 8 4 4-4 4"/><path d="m16 4-4 4-4-4"/><path d="m8 20 4-4 4 4"/></svg>
-          </a>
+        <h1 class="home-title">Fridge Door</h1>
+        <!-- A fridge door: freezer part on top, fridge part below. Each page is a note stuck on it with a magnet. -->
+        <nav class="fridge" aria-label="Pagina's">
+          <div class="door door-freezer">
+            <span class="handle" aria-hidden="true"></span>
+            <a class="tile tile-freezer" href="#/freezer" aria-label="Vriezer" title="Vriezer">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12h20"/><path d="M12 2v20"/><path d="m20 16-4-4 4-4"/><path d="m4 8 4 4-4 4"/><path d="m16 4-4 4-4-4"/><path d="m8 20 4-4 4 4"/></svg>
+            </a>
+          </div>
+          <div class="door door-fridge">
+            <span class="handle" aria-hidden="true"></span>
+            <a class="tile tile-groceries" href="#/groceries" aria-label="Boodschappen" title="Boodschappen">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            </a>
+          </div>
         </nav>
       </section>
 

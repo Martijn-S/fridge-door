@@ -1,8 +1,10 @@
-# Grocery List
+# Fridge Door
 
-A small shared grocery and freezer list for one household. It runs in the browser, can be added to a phone's home screen like an app, and updates live on every device that has it open.
+A small shared household app: a grocery list and a freezer list for one household, with room for more pages later. It runs in the browser, can be added to a phone's home screen like an app, and updates live on every device that has it open.
 
-The interface is in Dutch. The code and this README are in English.
+The name is meant as the "fridge door" where a household sticks its notes: it is not tied to groceries, so new pages can be added freely.
+
+The interface is in Dutch (the app name "Fridge Door" stays English). The code and this README are in English.
 
 ## Features
 
@@ -30,7 +32,7 @@ css/style.css       all styling (colors are variables at the top)
 js/main.js          navigation, popup behavior, connects sign-in to the lists
 js/firebase.js      Firebase config and the Firebase functions used elsewhere
 js/auth.js          Google sign-in and sign-out, settings popup
-js/groceries.js     the grocery list
+js/groceries.js     the grocery list ("Boodschappen")
 js/freezer.js       the freezer list and its detail popup
 manifest.webmanifest, icon-192.png, icon-512.png    home-screen install
 ```

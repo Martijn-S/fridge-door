@@ -1,6 +1,6 @@
 {
-  "name": "Boodschappenlijst",
-  "short_name": "Boodschappen",
+  "name": "Fridge Door",
+  "short_name": "Fridge Door",
   "lang": "nl",
   "start_url": "./",
   "scope": "./",

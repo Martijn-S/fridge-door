@@ -12,6 +12,10 @@
   --ice-ink: #28678a;
   --danger: #b3382c;
   --danger-soft: #f6dcd6;
+  --door: #f4f6f2;        /* fridge door */
+  --door-edge: #d6dcd3;   /* door frame */
+  --handle: #b9c1b6;      /* door handles */
+  --font-title: "Fraunces", Georgia, "Times New Roman", serif;
 }
 
 [hidden] { display: none !important; }
@@ -31,7 +35,7 @@ body {
   line-height: 1.4;
 }
 html { background: var(--bg); }
-h1 { font-size: 1.9rem; font-weight: 800; letter-spacing: -0.01em; margin: 0.5rem 0 1.25rem; }
+h1 { font-family: var(--font-title); font-size: 1.9rem; font-weight: 600; letter-spacing: -0.01em; margin: 0.5rem 0 1.25rem; }
 h2 { font-size: 1.4rem; font-weight: 800; margin: 0 0 1rem; overflow-wrap: anywhere; }
 p { margin: 0 0 1rem; }
 .status { color: var(--muted); }
@@ -86,26 +90,80 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 2; stroke-
 .login .logo { width: 6rem; height: 6rem; margin: 0 auto 1.25rem; border-radius: 1.5rem; }
 .login .primary-button { width: 100%; margin-top: 1rem; padding: 1.1rem 1rem; font-size: 1.15rem; }
 
-/* ---------- Home screen: two square icon tiles ---------- */
-.menu {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-top: 1.5rem;
+/* ---------- Home screen: a fridge door with two notes ---------- */
+/* The title sits in the top bar row, centered (the settings button stays on the right). */
+.home-title {
+  height: 2.75rem;
+  margin: -2.75rem 0 1rem;
+  line-height: 2.75rem;
+  text-align: center;
+  pointer-events: none;      /* so it never blocks the settings button */
 }
+
+.fridge {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;              /* the seam between freezer and fridge */
+  height: clamp(26rem, calc(100svh - 8rem), 44rem);
+  padding: 0.5rem;
+  border-radius: 2rem;
+  background: var(--door-edge);
+  box-shadow: 0 10px 24px -12px rgba(51, 41, 31, 0.45);
+}
+.door {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding-left: 2.5rem;      /* room for the handle */
+  background: var(--door);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.8);
+}
+.door-freezer { flex: 1; border-radius: 1.5rem 1.5rem 0.6rem 0.6rem; }
+.door-fridge  { flex: 2; border-radius: 0.6rem 0.6rem 1.5rem 1.5rem; align-items: start; padding-top: 3rem; }
+
+/* Handles: a vertical bar on the left, next to the seam */
+.handle {
+  position: absolute;
+  left: 1rem;
+  width: 0.55rem;
+  height: 4.5rem;
+  border-radius: 999px;
+  background: var(--handle);
+  box-shadow: inset -2px 0 0 rgba(51, 41, 31, 0.12);
+}
+.door-freezer .handle { bottom: 1rem; }
+.door-fridge .handle  { top: 1rem; }
+
+/* Notes: a slightly tilted square paper held by a round magnet */
 .tile {
+  --tilt: -3deg;
+  position: relative;
+  width: min(9rem, 100%);
   aspect-ratio: 1;
   display: grid;
   place-items: center;
-  border-radius: 1.75rem;
+  border-radius: 0.35rem;
   text-decoration: none;
-  border: 2px solid transparent;
-  transition: transform 0.1s, box-shadow 0.1s;
+  transform: rotate(var(--tilt));
+  box-shadow: 0 1px 1px rgba(51, 41, 31, 0.15), 0 8px 12px -6px rgba(51, 41, 31, 0.35);
+  transition: transform 0.1s;
 }
 .tile svg { width: 42%; height: 42%; stroke-width: 1.6; }
-.tile-groceries { background: var(--leaf-soft); color: var(--leaf-ink); border-color: #c3dab5; box-shadow: 0 5px 0 #c3dab5; }
-.tile-freezer   { background: var(--ice-soft);  color: var(--ice-ink);  border-color: #b8d8ea; box-shadow: 0 5px 0 #b8d8ea; }
-.tile:active { transform: translateY(4px); box-shadow: 0 1px 0 transparent; }
+.tile::before {              /* the magnet */
+  content: "";
+  position: absolute;
+  top: -0.55rem;
+  left: 50%;
+  width: 1.2rem;
+  height: 1.2rem;
+  margin-left: -0.6rem;
+  border-radius: 50%;
+  background: var(--magnet);
+  box-shadow: 0 2px 3px rgba(51, 41, 31, 0.35), inset 0 -2px 0 rgba(0, 0, 0, 0.15);
+}
+.tile-groceries { --tilt: 2.5deg; --magnet: var(--leaf);    background: var(--leaf-soft); color: var(--leaf-ink); }
+.tile-freezer   { --tilt: -3deg;  --magnet: var(--ice-ink); background: var(--ice-soft);  color: var(--ice-ink); }
+.tile:active { transform: rotate(var(--tilt)) scale(0.96); }
 
 /* ---------- Add forms ---------- */
 .add-form { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.25rem; }

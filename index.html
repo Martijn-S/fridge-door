@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&display=swap">
-  <link rel="stylesheet" href="css/style.css?v=2">
+  <link rel="stylesheet" href="css/style.css?v=3">
 </head>
 <body>
 
@@ -85,7 +85,19 @@
 
         <form id="freezer-form" class="add-form">
           <input type="text" id="new-freezer-item" placeholder="Wat gaat er in de vriezer?" aria-label="Nieuw item voor de vriezer" autocomplete="off">
-          <label class="date-field">Houdbaar tot
+          <div class="amount-row">
+            <input type="number" id="new-freezer-amount" value="1" min="1" step="1" inputmode="numeric" aria-label="Hoeveelheid">
+            <div class="segmented unit-toggle" id="new-freezer-unit" role="group" aria-label="Eenheid">
+              <button type="button" class="segment active" data-unit="count" aria-pressed="true">Aantal</button>
+              <button type="button" class="segment" data-unit="grams" aria-pressed="false">Gram</button>
+            </div>
+          </div>
+          <div class="since-field">
+            <span class="row-label">In de vriezer sinds</span>
+            <button type="button" id="new-freezer-since-button" class="since-button">Vandaag</button>
+            <input type="date" id="new-freezer-since" aria-label="In de vriezer sinds" hidden>
+          </div>
+          <label class="date-field"><span class="row-label">Houdbaar tot</span>
             <input type="date" id="new-freezer-date">
           </label>
           <button type="submit" class="primary-button">Toevoegen</button>
@@ -117,20 +129,89 @@
   <!-- Popup: freezer item details -->
   <dialog id="freezer-dialog" aria-labelledby="freezer-dialog-title">
     <div class="dialog-body">
-      <h2 id="freezer-dialog-title"></h2>
-      <dl class="detail-list">
-        <div>
-          <dt>In de vriezer sinds</dt>
-          <dd id="freezer-added"></dd>
+      <!-- Details (default) -->
+      <div id="freezer-view">
+        <div class="dialog-head">
+          <h2 id="freezer-dialog-title"></h2>
+          <button type="button" id="freezer-edit" class="icon-button" aria-label="Bewerken" title="Bewerken">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+          </button>
         </div>
-        <div>
-          <dt>Houdbaar tot</dt>
-          <dd id="freezer-expires"></dd>
+        <dl class="detail-list">
+          <div>
+            <dt>Hoeveelheid</dt>
+            <dd id="freezer-amount"></dd>
+          </div>
+          <div>
+            <dt>In de vriezer sinds</dt>
+            <dd id="freezer-added"></dd>
+          </div>
+          <div>
+            <dt>Houdbaar tot</dt>
+            <dd id="freezer-expires"></dd>
+          </div>
+        </dl>
+        <div class="dialog-actions">
+          <button type="button" id="freezer-delete" class="danger-button">Verwijderen</button>
+          <button type="button" class="secondary-button" data-close>Sluiten</button>
         </div>
-      </dl>
+      </div>
+
+      <!-- Edit form (shown after tapping the pencil) -->
+      <form id="freezer-edit-form" hidden>
+        <h2>Bewerken</h2>
+        <div class="form-grid">
+          <label class="field"><span class="field-label">Naam</span>
+            <input type="text" id="edit-name" autocomplete="off" required>
+          </label>
+          <div class="field">
+            <span class="field-label">Hoeveelheid</span>
+            <div class="amount-row">
+              <input type="number" id="edit-amount" min="1" step="1" inputmode="numeric" aria-label="Hoeveelheid">
+              <div class="segmented unit-toggle" id="edit-unit" role="group" aria-label="Eenheid">
+                <button type="button" class="segment active" data-unit="count" aria-pressed="true">Aantal</button>
+                <button type="button" class="segment" data-unit="grams" aria-pressed="false">Gram</button>
+              </div>
+            </div>
+          </div>
+          <label class="field"><span class="field-label">In de vriezer sinds</span>
+            <input type="date" id="edit-since">
+          </label>
+          <label class="field"><span class="field-label">Houdbaar tot</span>
+            <input type="date" id="edit-expires">
+          </label>
+        </div>
+        <div class="dialog-actions">
+          <button type="submit" class="primary-button">Opslaan</button>
+          <button type="button" id="edit-cancel" class="secondary-button">Annuleren</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Popup: how many grams were used -->
+  <dialog id="use-dialog" aria-labelledby="use-title">
+    <form id="use-form" class="dialog-body">
+      <h2 id="use-title"></h2>
+      <label class="field"><span class="field-label">Hoeveel gram heb je gebruikt?</span>
+        <input type="number" id="use-input" min="1" step="1" inputmode="numeric" required>
+      </label>
+      <p id="use-hint" class="status hint"></p>
       <div class="dialog-actions">
-        <button type="button" id="freezer-delete" class="danger-button">Verwijderen</button>
-        <button type="button" class="secondary-button" data-close>Sluiten</button>
+        <button type="submit" class="primary-button">Opslaan</button>
+        <button type="button" class="secondary-button" data-close>Annuleren</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Popup: confirm removing an item that is finished -->
+  <dialog id="remove-dialog" aria-labelledby="remove-title">
+    <div class="dialog-body">
+      <h2 id="remove-title">Verwijderen?</h2>
+      <p id="remove-text"></p>
+      <div class="dialog-actions">
+        <button type="button" id="remove-confirm" class="danger-button armed">Verwijderen</button>
+        <button type="button" class="secondary-button" data-close>Annuleren</button>
       </div>
     </div>
   </dialog>

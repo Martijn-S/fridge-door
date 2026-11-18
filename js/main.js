@@ -2,7 +2,8 @@
 // and connecting sign-in to the two lists. index.html loads only this file.
 import { initAuth } from "./auth.js";
 import { startGroceries, stopGroceries } from "./groceries.js";
-import { startFreezer, stopFreezer } from "./freezer.js";
+// The "?v=3" is a version tag: raise it when freezer.js changes, so phones load the new copy.
+import { startFreezer, stopFreezer } from "./freezer.js?v=3";
 
 // ---------- Navigation ----------
 // The part of the address after "#/" decides which view is shown.
@@ -22,11 +23,9 @@ window.addEventListener("hashchange", showView);
 showView();
 
 // ---------- Popups ----------
-const settingsDialog = document.getElementById("settings-dialog");
-const freezerDialog = document.getElementById("freezer-dialog");
-
-for (const dialog of [settingsDialog, freezerDialog]) {
-  // A click on the dark area around the popup closes it.
+// Every popup on the page (also ones added later): a click on the dark area
+// around it closes it, and so does any button inside it marked data-close.
+for (const dialog of document.querySelectorAll("dialog")) {
   dialog.addEventListener("click", (event) => {
     if (event.target === dialog) dialog.close();
   });
